@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <property resource="application.properties"/>
+
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %mdc %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+
+    <appender name="AMQP" class="org.springframework.amqp.rabbit.logback.AmqpAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+
+        <applicationId>elk-demo</applicationId>
+        <exchangeName>logger.topic</exchangeName>
+        <host>${spring.rabbitmq.host}</host>
+        <port>${spring.rabbitmq.port}</port>
+        <username>${spring.rabbitmq.username}</username>
+        <password>${spring.rabbitmq.password}</password>3
+        <exchangeType>topic</exchangeType>
+        <routingKeyPattern>logs</routingKeyPattern>
+        <generateId>true</generateId>
+        <charset>UTF-8</charset>
+        <durable>true</durable>
+        <deliveryMode>NON_PERSISTENT</deliveryMode>
+        <declareExchange>true</declareExchange>
+        <contentType>application/json</contentType>
+
+    </appender>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <root>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="AMQP"/>
+    </root>
+
+</configuration>

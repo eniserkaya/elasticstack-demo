@@ -1,0 +1,22 @@
+version: "3"
+services:
+#  postgres:
+#    image: postgres:15.1-alpine
+#    ports:
+#      - "5433:5432"
+#    volumes:
+#      - ~/DockerVolumes/egitim/postgres:/var/lib/postgresql/data
+#    environment:
+#      - POSTGRES_DB=elk-egitim
+#      - POSTGRES_PASSWORD=q
+#      - TZ=Europe/Istanbul
+#      - LANG=tr_TR.utf8
+#      - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=tr-TR
+#    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3.10.8-management
+    ports:
+      - "5675:5672"
+      - "15675:15672"
+    restart: always
