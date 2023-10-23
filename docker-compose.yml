@@ -1,22 +1,107 @@
 version: "3"
 services:
-#  postgres:
-#    image: postgres:15.1-alpine
-#    ports:
-#      - "5433:5432"
-#    volumes:
-#      - ~/DockerVolumes/egitim/postgres:/var/lib/postgresql/data
-#    environment:
-#      - POSTGRES_DB=elk-egitim
-#      - POSTGRES_PASSWORD=q
-#      - TZ=Europe/Istanbul
-#      - LANG=tr_TR.utf8
-#      - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=tr-TR
-#    restart: always
+  postgres:
+    container_name: postgres
+    image: postgres:15.1-alpine
+    ports:
+      - "5433:5432"
+    volumes:
+      - ~/DockerVolumes/egitim/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=q
+      - TZ=Europe/Istanbul
+      - LANG=tr_TR.utf8
+      - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=tr-TR
+    networks:
+      - elk
+    restart: always
 
   rabbitmq:
+    container_name: "rabbitmq"
     image: rabbitmq:3.10.8-management
     ports:
       - "5675:5672"
       - "15675:15672"
+    networks:
+      - elk
     restart: always
+
+  elasticsearch:
+    container_name: "elasticsearch"
+    build:
+      context: elasticsearch/
+      args:
+        ELK_VERSION: 8.10.4
+    volumes:
+      - type: bind
+        source: ./elasticsearch/config/elasticsearch.yml
+        target: /usr/share/elasticsearch/config/elasticsearch.yml
+        read_only: true
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    ports:
+      - "127.0.0.1:9200:9200"
+    environment:
+      ES_JAVA_OPTS: "-Xmx1g -Xms1g"
+      #ELASTIC_PASSWORD: changeme
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
+    networks:
+      - elk
+    restart: always
+
+  logstash:
+    container_name: "logstash"
+    build:
+      context: logstash/
+      args:
+        ELK_VERSION: 8.10.4
+
+    volumes:
+      - type: bind
+        source: ./logstash/pipeline
+        target: /usr/share/logstash/pipeline
+        read_only: true
+
+      - type: bind
+        source: ./logstash/sql_connector/postgresql-42.6.0.jar
+        target: /usr/share/logstash/logstash-core/lib/jars/postgresql-42.6.0.jar
+        read_only: true
+
+      - type: bind
+        source: ./logstash/query/query.sql
+        target: /usr/share/logstash/config/logstash/query.sql
+        read_only: true
+
+
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: always
+
+  kibana:
+    container_name: "kib"
+    build:
+      context: kibana/
+      args:
+        ELK_VERSION: 8.10.4
+    volumes:
+      - type: bind
+        source: ./kibana/config/kibana.yml
+        target: /usr/share/kibana/config/kibana.yml
+        read_only: true
+    ports:
+      - "127.0.0.1:5601:5601"
+    networks:
+      - elk
+
+networks:
+  elk:
+    driver: bridge
+
+volumes:
+  elasticsearch:

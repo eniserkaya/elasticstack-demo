@@ -1,0 +1,26 @@
+PUT _index_template/deprem_template
+{
+"template": {
+"mappings": {
+"_routing": {
+"required": false
+},
+"_source": {
+"excludes": [],
+"includes": [],
+"enabled": true
+},
+"properties": {
+"deprem_koordinati": {
+"ignore_malformed": true,
+"type": "geo_point",
+"ignore_z_value": true
+}
+}
+}
+},
+"index_patterns": [
+"demo-deprem*"
+],
+"composed_of": []
+}
